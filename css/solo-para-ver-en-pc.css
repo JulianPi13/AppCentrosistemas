@@ -1,0 +1,2 @@
+/* Opcional: solo para abrir index.html fuera de Claude. Dentro de Claude esta regla ya la pone la plataforma. */
+[hidden]:not([hidden=until-found i]){display:none!important}

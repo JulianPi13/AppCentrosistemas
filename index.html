@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>CENTROSISTEMAS – Control del Taller</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="css/estilos.css">
+<link rel="stylesheet" href="css/solo-para-ver-en-pc.css">
+</head>
+<body>
+<div class="login" id="login">
+  <div class="login-caja">
+    <div class="login-marca"><div class="logo-fondo"><img src="logo.webp" alt="centro SISTEMAS, soluciones tecnológicas a su alcance"></div><b>Control del Taller</b></div>
+    <div id="login-cuerpo"><p class="aviso" style="margin:0">Cargando…</p></div>
+    <p class="creditos">Aplicación desarrollada por Oscar Pinto<br>Versión 1.0</p>
+  </div>
+</div>
+
+<div class="wrap">
+  <header>
+    <div class="marca"><img class="h-logo" src="logo-icono.webp" alt="Logo de CENTROSISTEMAS"><div>
+      <h1><span>CENTROSISTEMAS</span> · Control del Taller</h1>
+      <div class="sub" id="sub">Órdenes de reparación</div>
+      <div class="quien"><span class="rol" id="rol"></span><button type="button" id="salir" hidden>Salir</button></div>
+    </div>
+    </div>
+    <div class="botones">
+      <div class="rec" id="rec-wrap" hidden>
+        <button type="button" class="btn-main rec-btn" id="rec-btn" aria-haspopup="true" aria-expanded="false" aria-controls="rec-menu">Recibir equipo <span aria-hidden="true">▾</span></button>
+        <div class="rec-menu" id="rec-menu" role="menu" hidden>
+          <label class="mi" id="foto-btn" role="menuitem" hidden><b>Con foto del sticker</b><small>La app lee el sticker y llena los datos</small><input id="foto" type="file" accept="image/*" capture="environment"></label>
+          <button type="button" class="mi" id="btn-voz" role="menuitem" hidden><b>Por voz</b><small>Diga todos los datos de una vez y la app llena el formulario</small></button>
+          <button type="button" class="mi" id="nueva" role="menuitem"><b>A mano</b><small>Escribir los datos en el formulario</small></button>
+        </div>
+      </div>
+      <button id="btn-ent" class="btn-main" hidden>Entregar equipo</button>
+      <button id="btn-pos" class="btn-main" hidden>Vender</button>
+      <button id="btn-rep" class="btn-main" hidden>Reportar reparación</button>
+      <button id="btn-enc" class="btn-main" hidden>Encargos</button>
+      <button id="btn-caja" hidden>Caja diaria</button>
+      <button id="btn-inv" hidden>Inventario</button>
+      <button id="btn-admin" hidden>Administración</button>
+    </div>
+  </header>
+
+  <div class="aviso-atraso" id="aviso-atraso" hidden role="alert"><span id="aviso-atraso-txt"></span><button type="button" id="aviso-atraso-btn">Ver equipos</button></div>
+  <div class="aviso-caja" id="aviso-caja" hidden><span id="aviso-caja-txt"></span><button type="button" class="btn-main" id="aviso-caja-btn">Ir a la caja</button></div>
+  <div class="rcaja" id="rcaja" hidden></div>
+  <p class="falta" id="aviso-cuenta" hidden style="margin:0;padding:10px 12px;border:1px solid currentColor;border-radius:10px">Esta cuenta de Claude solo tiene permiso para <b>ver</b> la app: no puede guardar órdenes ni fotos. El dueño debe abrir Compartir e invitar este correo como <b>Editor</b>.</p>
+
+  <div class="estados" id="estados"></div>
+
+  <div class="barra">
+    <input id="buscar" type="search" placeholder="Buscar por cliente, teléfono, marca, modelo o número de orden">
+  </div>
+
+  <div class="lista" id="lista"><div class="vacio">Cargando órdenes…</div></div>
+  <p class="aviso" id="aviso"></p>
+  <p class="creditos">Aplicación desarrollada por Oscar Pinto<br>Versión 1.0</p>
+</div>
+
+<div class="deshacer" id="deshacer-bar" hidden role="status"><span id="deshacer-txt"></span><button type="button" class="btn-main" id="deshacer-ok">Deshacer</button><button type="button" id="deshacer-x" aria-label="Cerrar aviso">✕</button></div>
+<div class="leyendo" id="leyendo" hidden><div><img id="prev" alt="Foto del sticker"><b id="leyendo-txt">Leyendo el sticker…</b><button type="button" id="leyendo-ok" hidden>Cerrar</button></div></div>
+<div class="fondo" id="fondo" hidden></div>
+<form class="panel" id="panel" hidden autocomplete="off">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+    <h2 id="ptit">Recibir equipo</h2>
+    <button type="button" id="cerrar">Cerrar</button>
+  </div>
+
+  <div class="grupo">
+    <h3>Cliente</h3>
+    <div class="campo full"><label for="f-cliente">Nombre</label><input id="f-cliente" list="dl-clientes" required></div>
+    <div class="campo"><label for="f-tel">WhatsApp / teléfono</label><input id="f-tel" inputmode="tel" placeholder="300 123 4567"></div>
+    <div class="campo"><label for="f-cedula">Cédula (opcional)</label><input id="f-cedula" inputmode="numeric"></div>
+  </div>
+
+  <div class="grupo">
+    <h3>Equipo</h3>
+    <div class="campo"><label for="f-tipo">Tipo de equipo</label><select id="f-tipo"><option>Celular</option><option>Computador</option><option>Tablet</option><option>Otro</option></select></div>
+    <div class="campo"><label for="f-marca">Marca <b class="oblig">*</b></label><input id="f-marca" list="marcas"></div>
+    <div class="campo"><label for="f-modelo">Modelo (referencia) <b class="oblig">*</b></label><input id="f-modelo"></div>
+    <div class="campo"><label for="f-imei">IMEI</label><input id="f-imei" inputmode="numeric" maxlength="17"></div>
+    <div class="campo"><label for="f-clave">Clave, PIN o patrón de bloqueo</label><input id="f-clave" placeholder="Ej: 1234 o patrón 1-2-3-6-9"></div>
+    <div class="campo full"><label id="pat-lbl">Patrón de desbloqueo (dibújelo con el dedo)</label>
+      <div class="patron-caja"><svg id="pat" viewBox="0 0 300 300" role="img" aria-labelledby="pat-lbl"></svg>
+        <div class="pat-info"><b id="pat-txt">Sin patrón</b><span class="aviso" style="margin:0">El punto con anillo es donde empieza.</span><button type="button" id="pat-borrar">Borrar patrón</button></div></div></div>
+    <div class="campo full"><label for="f-falla">Qué falla dice el cliente</label><textarea id="f-falla" required></textarea></div>
+    <div class="campo full"><label for="f-recibe">Cómo llega (accesorios, golpes, rayones)</label><input id="f-recibe" placeholder="Sin cargador, con forro, pantalla rayada"></div>
+  </div>
+
+  <div class="grupo" id="g-fotos" hidden>
+    <h3>Fotos de cómo llega · mínimo 2 <b class="oblig">*</b></h3>
+    <div class="fotos" id="fotos"></div>
+    <p class="aviso campo full" id="fotos-msg" style="margin:0">Obligatorio al recibir: mínimo 2 fotos (máximo 3). Enfoque las fallas o detalles importantes: pantalla o tapa partida, golpes, rayones, botones o lector de SIM que falten.</p>
+  </div>
+
+  <div class="grupo" id="g-sol" hidden>
+    <h3>Fotos de la reparación</h3>
+    <div class="fotos" id="sol-fotos"></div>
+  </div>
+
+  <div class="grupo">
+    <h3>Trabajo</h3>
+    <div class="campo"><label for="f-estado">Estado</label><select id="f-estado"></select></div>
+    <div class="campo full" id="c-repref" hidden><label for="f-repref">Referencia del repuesto que se necesita</label><input id="f-repref" placeholder="Ej: pantalla A54 original"><span class="aviso" style="margin:0">Al guardar se anota solo en Encargos.</span></div>
+    <div class="campo"><label for="f-tecnico">Técnico</label><input id="f-tecnico"></div>
+    <div class="campo"><label for="f-entrega">Fecha prometida</label><input id="f-entrega" type="date"></div>
+    <div class="campo"><label for="f-garantia">Garantía (días)</label><input id="f-garantia" type="number" min="0" value="15"></div>
+    <div class="campo full"><label for="f-diag">Diagnóstico y trabajo hecho</label><textarea id="f-diag"></textarea></div>
+    <div class="campo full" id="c-pieza" hidden><label for="f-pieza">Repuesto del inventario que se instaló</label><select id="f-pieza"></select><span class="aviso" style="margin:0">Al guardar se descuenta 1 del inventario.</span></div>
+  </div>
+
+  <div class="grupo">
+    <h3>Cobro (pesos)</h3>
+    <div class="campo"><label for="f-precio">Valor reparación</label><input id="f-precio" type="number" min="0" step="1000" inputmode="numeric"></div>
+    <div class="campo" id="c-repuesto" hidden><label for="f-repuesto">Costo repuesto</label><input id="f-repuesto" type="number" min="0" step="1000" inputmode="numeric"></div>
+    <div class="campo"><label for="f-abono">Abono recibido</label><input id="f-abono" type="number" min="0" step="1000" inputmode="numeric"></div>
+    <div class="campo"><label>&nbsp;</label></div>
+    <div class="saldo"><span>Saldo por cobrar</span><span id="saldo">$ 0</span></div>
+    <div class="saldo" id="r-ganancia" hidden style="border:0;padding:0;color:var(--muted);font-weight:500"><span>Ganancia</span><span id="ganancia">$ 0</span></div>
+  </div>
+
+  <div class="grupo" id="ent-info" hidden>
+    <h3>Entrega</h3>
+    <div class="campo full" id="ent-info-txt"></div>
+    <div class="fotos" id="ent-info-foto"></div>
+  </div>
+
+  <div id="zona-wa" hidden>
+    <a class="wa" id="wa" href="#" target="_blank" rel="noopener">Avisar por WhatsApp</a>
+    <span class="falta" id="sin-tel" hidden>Escriba el WhatsApp del cliente para poder avisarle.</span>
+  </div>
+
+  <div class="acciones">
+    <div><button type="button" class="btn-danger" id="borrar" hidden>Eliminar</button><button type="button" class="btn-danger" id="borrar2" hidden>Sí, eliminar para siempre</button></div>
+    <div><select id="papel" aria-label="Ancho del papel de la impresora" style="width:auto" hidden><option value="58">Papel 58 mm</option><option value="80">Papel 80 mm</option></select><button type="button" id="imprimir" hidden>Recibo PDF</button><button type="submit" class="btn-main" id="guardar">Guardar</button></div>
+  </div>
+  <p class="aviso" id="msg" role="status"></p>
+</form>
+
+<div class="panel" id="admin" hidden>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+    <h2>Administración</h2>
+    <button type="button" id="admin-cerrar">Cerrar</button>
+  </div>
+  <div style="display:flex;gap:8px;margin:12px 0"><button type="button" id="tab-staff" class="btn-main">Staff</button><button type="button" id="tab-conf">Configuración</button><button type="button" id="tab-log">Log</button></div>
+  <div id="ad-staff">
+  <div class="grupo">
+    <h3>Usuarios</h3>
+    <div class="campo full" id="usuarios-lista" style="gap:0"></div>
+    <div class="campo"><label for="u-nombre">Nombre</label><input id="u-nombre" placeholder="Ej: Jonier"></div>
+    <div class="campo"><label for="u-rol">Rol</label><select id="u-rol"><option value="asesor">Asesor de ventas</option><option value="tecnico">Técnico</option><option value="consulta">Solo consulta</option></select></div>
+    <div class="campo"><label for="u-usuario">Usuario para entrar</label><input id="u-usuario" autocapitalize="none" autocomplete="off" spellcheck="false" placeholder="Ej: jonier"></div>
+    <div class="campo"><label for="u-pin">Contraseña</label><input id="u-pin" type="password" autocomplete="new-password" placeholder="Mínimo 8, letras y números"></div>
+    <div class="campo"><label>&nbsp;</label><button type="button" class="btn-main" id="u-crear">Crear usuario</button></div>
+    <p class="aviso campo full" style="margin:0"><b>Asesor de ventas</b> y <b>Técnico:</b> trabajan con los permisos de abajo. <b>Solo consulta:</b> mira las órdenes pero no cambia nada.</p>
+  </div>
+  <div class="grupo">
+    <h3>Mi acceso de administrador</h3>
+    <div class="campo"><label for="a-usuario">Mi usuario</label><input id="a-usuario" autocapitalize="none" autocomplete="off" spellcheck="false"></div>
+    <div class="campo"><label for="a-pin">Contraseña nueva</label><input id="a-pin" type="password" autocomplete="new-password" placeholder="Mínimo 8, letras y números"></div>
+    <div class="campo full"><button type="button" id="a-cambiar">Guardar mi acceso</button></div>
+    <div class="campo"><label for="a-wa">WhatsApp para recibir los cierres de caja</label><input id="a-wa" inputmode="tel" placeholder="301 700 2149"></div>
+    <div class="campo"><label>&nbsp;</label><button type="button" id="a-wa-ok">Guardar número</button></div>
+  </div>
+  <div class="grupo">
+    <h3>Qué puede hacer el asesor de ventas</h3>
+    <div class="campo full" id="perms" style="gap:0"></div>
+  </div>
+  <div class="grupo">
+    <h3>Qué puede hacer el técnico</h3>
+    <div class="campo full" id="perms-tec" style="gap:0"></div>
+    <p class="aviso campo full" style="margin:0">El costo del repuesto y la ganancia los ve solo el administrador, siempre.</p>
+  </div>
+  </div>
+  <div id="ad-conf" hidden>
+  <div class="grupo">
+    <h3>Formato de impresora (recibos)</h3>
+    <div class="campo"><label for="i-papel">Ancho del papel</label><select id="i-papel"><option value="58">Papel 58 mm</option><option value="80">Papel 80 mm</option></select></div>
+    <div class="campo"><label for="i-gar">Días de garantía normales</label><input id="i-gar" type="number" inputmode="numeric" min="0" max="365"></div>
+    <div class="campo full"><label for="i-nombre">Nombre del negocio (sale arriba en los recibos)</label><input id="i-nombre" maxlength="40"></div>
+    <div class="campo full"><label for="i-sub">Línea debajo del nombre (solo sale si no se usa el logo)</label><input id="i-sub" maxlength="60"></div>
+    <div class="campo full"><label for="i-pie1">Frase al final del recibo de ingreso</label><input id="i-pie1" maxlength="100"></div>
+    <div class="campo full"><label for="i-pie2">Frase al final del recibo de entrega</label><input id="i-pie2" maxlength="100"></div>
+    <div class="campo full"><label for="i-nocubre">Lo que la garantía NO cubre (una cosa por línea)</label><textarea id="i-nocubre" rows="8"></textarea></div>
+    <label class="toggle"><input type="checkbox" id="i-logo"><span>Mostrar el logo arriba del recibo</span></label>
+    <label class="toggle"><input type="checkbox" id="i-firma"><span>Poner la línea para la firma del cliente</span></label>
+    <div class="campo"><button type="button" class="btn-main" id="i-guardar">Guardar formato</button></div>
+    <div class="campo"><button type="button" id="i-prueba">Ver recibo de ejemplo</button></div>
+    <p class="aviso campo full" style="margin:0">El recibo de ejemplo usa lo que está escrito aquí, aunque todavía no lo haya guardado.</p>
+  </div>
+  <div class="grupo">
+    <h3>Mensajes de WhatsApp</h3>
+    <div class="campo"><label for="m-asesor">Nombre de quien escribe</label><input id="m-asesor" maxlength="30"></div>
+    <div class="campo"><label for="m-saludo">Saludo con que empieza cada mensaje</label><input id="m-saludo"></div>
+    <div class="campo full"><label for="m-tipo">Mensaje que quiere cambiar</label><select id="m-tipo"></select></div>
+    <div class="campo full"><label for="m-texto">Texto del mensaje (sigue después del saludo)</label><textarea id="m-texto" rows="9"></textarea></div>
+    <p class="aviso campo full" style="margin:0">Para poner datos del cliente escriba estas palabras entre llaves: <b>{cliente} {equipo} {orden} {falla} {diagnostico} {valor} {abono} {saldo} {fecha} {prometida} {garantia} {hasta} {estado} {asesor} {negocio} {descripcion} {cantidad} {proveedor}</b>. Si un dato está vacío, esa línea no sale en el mensaje.</p>
+    <div class="campo full"><label>Así lo verá el cliente (con datos de ejemplo)</label><div id="m-prev" style="white-space:pre-wrap;background:var(--bg,#f4f7fb);border:1px solid var(--line);border-radius:8px;padding:10px;font-size:.88rem"></div></div>
+    <div class="campo"><button type="button" class="btn-main" id="m-guardar">Guardar mensajes</button></div>
+    <div class="campo"><button type="button" id="m-orig">Volver al texto original</button></div>
+  </div>
+  </div>
+  <div id="ad-log" hidden>
+    <div class="grupo">
+      <h3>Registro de actividad (log)</h3>
+      <div class="campo"><label for="lg-dia">Día</label><input id="lg-dia" type="date"></div>
+      <div class="campo"><label for="lg-staff">Staff</label><select id="lg-staff"><option value="">Todos</option></select></div>
+      <div class="campo full"><label for="lg-buscar">Buscar en lo que se hizo</label><input id="lg-buscar" type="search" placeholder="Ej: venta, orden 1005, caja, eliminada"></div>
+      <div class="campo"><button type="button" class="btn-main" id="lg-act">Actualizar</button></div>
+      <div class="campo"><button type="button" id="lg-limpiar">Quitar filtros</button></div>
+      <p class="aviso campo full" id="lg-res" style="margin:0"></p>
+      <div class="campo full" id="lg-lista" style="gap:0"></div>
+      <div class="campo full"><button type="button" id="lg-mas" hidden>Ver más</button></div>
+    </div>
+  </div>
+  <p class="aviso" id="admin-msg" role="status"></p>
+</div>
+
+<div class="panel" id="enc" hidden>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+    <h2>Encargos</h2>
+    <button type="button" id="enc-cerrar">Cerrar</button>
+  </div>
+  <div id="enc-vista-lista" style="display:flex;flex-direction:column;gap:10px">
+    <button type="button" class="btn-main" id="enc-nuevo">+ Nuevo encargo</button>
+    <div class="cats" id="enc-chips"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><select id="enc-f-cli" aria-label="Filtrar por cliente" style="flex:1 1 180px"></select><select id="enc-f-eq" aria-label="Filtrar por equipo" style="flex:1 1 180px"></select></div>
+    <input id="enc-buscar" type="search" placeholder="Buscar por descripción, cliente, proveedor o número">
+    <div class="inv-lista" id="enc-lista"></div>
+  </div>
+  <form id="enc-f" hidden autocomplete="off" style="display:flex;flex-direction:column;gap:14px">
+    <div class="grupo">
+      <h3 id="enc-tit">Nuevo encargo</h3>
+      <div class="campo"><label for="enc-tipo">Qué se pide</label><select id="enc-tipo"><option>Repuesto</option><option>Parte</option><option>Accesorio</option></select></div>
+      <div class="campo"><label for="enc-cant">Cantidad</label><input id="enc-cant" type="number" min="1" value="1" inputmode="numeric"></div>
+      <div class="campo full"><label for="enc-desc">Descripción detallada <b class="oblig">*</b></label><textarea id="enc-desc" rows="4" placeholder="Ej: Pantalla original para Samsung A54, con marco, color negro. Toque el cuadro y el micrófono del teclado para dictar."></textarea></div>
+      <div class="campo full"><label>Foto del repuesto, parte o accesorio (máximo 3)</label><div class="fotos" id="enc-fotos"></div></div>
+    </div>
+    <div class="grupo">
+      <h3>Para quién y dónde se cotizó</h3>
+      <div class="campo"><label for="enc-cliente">Cliente (escriba y escoja de la lista)</label><input id="enc-cliente" list="dl-clientes"></div>
+      <div class="campo"><label for="enc-tel">WhatsApp del cliente</label><input id="enc-tel" inputmode="tel" placeholder="300 123 4567"></div>
+      <div class="campo full"><label for="enc-equipo">Equipo del cliente (si ya dejó uno en el taller)</label><select id="enc-equipo"><option value="">Ninguno / otro equipo</option></select></div>
+      <div class="campo full"><label for="enc-prov">Cotizado con (proveedor o tienda)</label><input id="enc-prov" list="enc-provs" placeholder="Ej: Tienda Cúcuta, Mercado Libre, Don Pedro"><datalist id="enc-provs"></datalist></div>
+    </div>
+    <div class="grupo">
+      <h3>Precio y estado</h3>
+      <div class="campo"><label for="enc-precio">Precio para el cliente (total)</label><input id="enc-precio" type="number" min="0" step="1000" inputmode="numeric"></div>
+      <div class="campo" id="enc-costo-c" hidden><label for="enc-costo">Lo que cuesta (solo usted lo ve)</label><input id="enc-costo" type="number" min="0" step="1000" inputmode="numeric"></div>
+      <div class="campo full"><label for="enc-estado">Estado del encargo</label><select id="enc-estado"></select></div>
+    </div>
+    <div class="grupo">
+      <h3>Pagos y abonos</h3>
+      <div class="campo full" id="enc-pagos" style="gap:0"></div>
+      <div class="saldo"><span>Saldo por cobrar</span><span id="enc-saldo">$ 0</span></div>
+      <div class="campo"><label for="enc-pmonto">Recibe ahora</label><input id="enc-pmonto" type="number" min="0" step="1000" inputmode="numeric"></div>
+      <div class="campo"><label for="enc-pmetodo">Forma de pago</label><select id="enc-pmetodo"></select></div>
+      <div class="campo full" style="flex-direction:row;gap:8px;flex-wrap:wrap"><button type="button" class="btn-main" id="enc-pagar">Registrar pago</button><button type="button" id="enc-pagar-todo">Pagó todo el saldo</button></div>
+      <p class="aviso campo full" style="margin:0">Cada pago queda en la caja del día.</p>
+    </div>
+    <div id="enc-zona-wa" hidden><a class="wa" id="enc-wa" href="#" target="_blank" rel="noopener">Avisar por WhatsApp</a></div>
+    <div class="acciones">
+      <div><button type="button" class="btn-danger" id="enc-borrar" hidden>Eliminar</button></div>
+      <div><button type="button" id="enc-volver">Volver a la lista</button><button type="submit" class="btn-main">Guardar</button></div>
+    </div>
+    <p class="aviso" id="enc-msg" role="status" style="margin:0"></p>
+  </form>
+</div>
+
+<div class="panel" id="rep" hidden>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+    <h2>Reportar reparación</h2>
+    <button type="button" id="rep-cerrar">Cerrar</button>
+  </div>
+  <div id="rep-paso1" style="display:flex;flex-direction:column;gap:10px">
+    <input id="rep-buscar" type="search" placeholder="Buscar por cliente, equipo o número de orden">
+    <div class="grupo"><h3 id="rep-lista-t">Equipos pendientes por reparar</h3><div class="campo full" id="rep-lista" style="gap:0"></div></div>
+  </div>
+  <form id="rep-paso2" hidden autocomplete="off" style="display:flex;flex-direction:column;gap:14px">
+    <div class="grupo">
+      <h3 id="rep-tit">Orden</h3>
+      <div class="campo full" id="rep-res"></div>
+      <div class="campo full"><button type="button" id="rep-otra">Escoger otro equipo</button></div>
+    </div>
+    <div class="grupo">
+      <h3>1. ¿Qué se le hizo al equipo?</h3>
+      <div class="campo full"><label for="rep-nota">Toque el cuadro y luego el micrófono del teclado para dictar</label>
+        <textarea id="rep-nota" rows="4" placeholder="Ej: Se cambió el módulo de pantalla de Redmi 12C, quedó funcionando. El valor es 160 mil."></textarea></div>
+      <div class="campo full"><button type="button" id="rep-leer">Llenar con lo que dicté</button></div>
+      <div class="campo full"><label for="rep-trab">Trabajo hecho (queda en el historial)</label><textarea id="rep-trab" rows="2"></textarea></div>
+      <div class="campo"><label for="rep-estado">Cómo queda el equipo</label><select id="rep-estado">
+        <option value="listo">Listo para entregar</option><option value="reparacion">Sigue en reparación</option><option value="repuesto">Esperando repuesto</option><option value="sinreparacion">No tuvo reparación</option></select></div>
+      <div class="campo"><label for="rep-valor">Valor a cobrar</label><input id="rep-valor" type="number" min="0" step="1000" inputmode="numeric"></div>
+      <div class="campo full"><label for="rep-pieza">Repuesto del inventario que se usó</label><select id="rep-pieza"></select></div>
+      <div class="campo" id="c-repcosto" hidden><label for="rep-costo">Costo del repuesto</label><input id="rep-costo" type="number" min="0" step="1000" inputmode="numeric"></div>
+      <p class="aviso campo full" id="rep-exp" style="margin:0"></p>
+    </div>
+    <div class="grupo">
+      <h3>2. Fotos de la solución · mínimo 1 <b class="oblig">*</b></h3>
+      <p class="aviso campo full" style="margin:0">Tome una foto que muestre el equipo ya reparado (por ejemplo, la pantalla encendida o la pieza cambiada). Máximo 3.</p>
+      <div class="fotos" id="rep-fotos"></div>
+    </div>
+    <button type="submit" class="btn-main" id="rep-ok">Guardar reporte</button>
+    <p class="aviso" id="rep-msg" role="status" style="margin:0"></p>
+  </form>
+</div>
+
+<div class="burbuja" id="guia" hidden role="dialog" aria-labelledby="g-preg">
+  <div class="g-top"><span class="g-paso" id="g-paso">Paso 1 de 11</span><button type="button" class="g-mini" id="g-sonido" aria-pressed="true">Voz: sí</button><button type="button" class="g-mini" id="g-salir" aria-label="Cerrar asistente">✕</button></div>
+  <div class="g-barra"><i id="g-prog"></i></div>
+  <p class="g-preg" id="g-preg">¿A nombre de quién es el equipo?</p>
+  <p class="g-ayuda" id="g-ayuda">Toque el micrófono del teclado y responda.</p>
+  <form id="g-form" autocomplete="off"><input id="g-resp" aria-labelledby="g-preg" enterkeyhint="next"></form>
+  <div class="g-acc"><button type="button" id="g-atras">Atrás</button><button type="button" id="g-saltar">Saltar</button><button type="button" class="btn-main" id="g-sig">Siguiente</button></div>
+  <label class="g-voz" id="g-voz-fila" hidden>Voz <select id="g-voz" aria-label="Voz que lee las preguntas"></select></label>
+  <button type="button" class="g-link" id="g-todo">Prefiero decir todo de una vez</button>
+</div>
+
+<div class="panel" id="voz" hidden>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+    <h2>Recibir por voz</h2>
+    <button type="button" id="voz-cerrar">Cerrar</button>
+  </div>
+  <div class="grupo">
+    <h3>Diga todos los datos del equipo</h3>
+    <ol class="campo full aviso" style="margin:0;padding-left:20px;gap:2px">
+      <li>Toque el cuadro de abajo.</li>
+      <li>Toque el <b>micrófono del teclado</b> del celular.</li>
+      <li>Diga todo seguido, en el orden que quiera.</li>
+    </ol>
+    <div class="campo full"><label for="voz-txt">Lo que dictó</label><textarea id="voz-txt" rows="7" placeholder="Ej: Cliente Juan Pérez, teléfono 300 123 4567, cédula 1098765432. Es un Samsung A54, pantalla rota, no da imagen. Llega sin forro y con la tapa rayada. Clave 1234. Valor 280 mil, deja abono de 100 mil, se entrega el viernes."></textarea></div>
+    <div class="campo full"><button type="button" class="btn-main" id="voz-ok">Llenar el formulario</button></div>
+  </div>
+  <p class="aviso" id="voz-msg" role="status" style="margin:0"></p>
+</div>
+
+<div class="panel" id="ent" hidden>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+    <h2>Entregar equipo</h2>
+    <button type="button" id="ent-cerrar">Cerrar</button>
+  </div>
+  <div id="ent-paso1" style="display:flex;flex-direction:column;gap:10px">
+    <input id="ent-buscar" type="search" placeholder="Buscar por cliente, teléfono, equipo o número de orden">
+    <div class="grupo"><h3>Equipos por entregar</h3><div class="campo full" id="ent-lista" style="gap:0"></div></div>
+  </div>
+  <form id="ent-paso2" hidden autocomplete="off" style="display:flex;flex-direction:column;gap:14px">
+    <div class="grupo">
+      <h3 id="ent-tit">Orden</h3>
+      <div class="campo full" id="ent-res"></div>
+      <div class="campo full"><button type="button" id="ent-otra">Escoger otra orden</button></div>
+    </div>
+    <div class="grupo">
+      <h3>Cobro del saldo</h3>
+      <div class="campo"><label for="ent-monto">Recibe ahora</label><input id="ent-monto" type="number" min="0" step="1000" inputmode="numeric"></div>
+      <div class="campo"><label for="ent-metodo">Forma de pago</label><select id="ent-metodo"><option>Efectivo</option><option>Transferencia</option><option>Nequi</option><option>Daviplata</option><option>Tarjeta</option></select></div>
+      <p class="aviso campo full" id="ent-debe" style="margin:0"></p>
+    </div>
+    <div class="grupo">
+      <h3>¿El cliente trae el recibo?</h3>
+      <div class="campo full" style="flex-direction:row;gap:8px;flex-wrap:wrap">
+        <button type="button" class="usr opc" id="ent-si" aria-pressed="true">Sí, trae el recibo</button>
+        <button type="button" class="usr opc" id="ent-no" aria-pressed="false">No trae el recibo</button>
+      </div>
+      <div class="campo full" id="ent-sin" hidden style="gap:10px">
+        <p class="aviso" style="margin:0">Tómele una foto a la persona sosteniendo su cédula y el equipo que recibe. Es obligatoria.</p>
+        <div class="campo"><label for="ent-cedula">Cédula de quien recibe</label><input id="ent-cedula" inputmode="numeric"></div>
+        <div class="campo"><label for="ent-quien">Nombre de quien recibe</label><input id="ent-quien"></div>
+        <div class="fotos" id="ent-foto-zona"></div>
+      </div>
+    </div>
+    <button type="submit" class="btn-main" id="ent-ok">Cerrar orden y entregar</button>
+    <p class="aviso" id="ent-msg" role="status" style="margin:0"></p>
+  </form>
+  <div id="ent-fin" hidden class="grupo">
+    <h3>Equipo entregado</h3>
+    <p class="campo full" id="ent-fin-txt" style="margin:0"></p>
+    <div class="campo full" style="flex-direction:row;flex-wrap:wrap;gap:8px"><a class="wa" id="ent-wa" href="#" target="_blank" rel="noopener" hidden>Enviar agradecimiento y garantía por WhatsApp</a><button type="button" class="btn-main" id="ent-pdf" hidden>Recibo de entrega PDF</button><button type="button" id="ent-otro">Entregar otro equipo</button></div>
+  </div>
+</div>
+
+<div class="panel pos" id="pos" hidden>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+    <h2>Ventas de mostrador</h2>
+    <button type="button" id="pos-cerrar">Cerrar</button>
+  </div>
+  <div class="carrito" id="carrito">
+    <div class="car-top"><b>Venta actual</b><span id="car-n" class="aviso" style="margin:0"></span></div>
+    <div id="car-lineas"></div>
+    <div class="car-total"><span>Total</span><b id="car-total">$ 0</b></div>
+    <div class="car-pago"><button type="button" class="btn-main" id="car-vender">Vender</button></div>
+    <div class="car-conf" id="car-conf" hidden>
+      <b>¿Cómo paga el cliente?</b>
+      <div class="metodos" id="car-metodos" role="radiogroup" aria-label="Forma de pago"></div>
+      <div class="efe" id="car-efe">
+        <div class="campo"><label for="car-recibe">Recibe en efectivo</label><input id="car-recibe" type="number" min="0" step="1000" inputmode="numeric" placeholder="Opcional"></div>
+        <div class="cambio" id="car-cambio"></div>
+      </div>
+      <div class="car-acc"><button type="button" id="car-volver">Volver</button><button type="button" class="btn-main" id="car-cobrar">Confirmar venta</button></div>
+    </div>
+    <input type="hidden" id="car-metodo" value="">
+    <p class="aviso" id="pos-msg" role="status" style="margin:0"></p>
+  </div>
+  <div class="pos-bus"><input id="pos-buscar" type="search" placeholder="Buscar producto: cargador, cable, memoria…"></div>
+  <div class="cats" id="pos-cats"></div>
+  <div class="prods" id="pos-prods"></div>
+  <div class="pos-acc">
+    <button type="button" id="pos-libre" hidden>+ Venta rápida (producto sin registrar)</button>
+    <button type="button" id="pos-excel" hidden>Cargar productos desde Excel</button>
+    <button type="button" id="pos-nuevo" hidden>+ Producto nuevo</button>
+    <button type="button" id="pos-modo" hidden aria-pressed="false">Editar productos</button>
+  </div>
+  <form class="grupo" id="pos-form" hidden autocomplete="off">
+    <h3 id="pf-tit">Producto</h3>
+    <div class="campo full"><label for="pf-nombre">Nombre</label><input id="pf-nombre" placeholder="Ej: Cargador tipo C 20W Samsung"></div>
+    <div class="campo"><label for="pf-cat">Categoría</label><select id="pf-cat"></select></div>
+    <div class="campo"><label for="pf-precio">Precio de venta</label><input id="pf-precio" type="number" min="0" step="500" inputmode="numeric"></div>
+    <div class="campo"><label for="pf-stock" id="pf-stock-l">Cantidad en existencia</label><input id="pf-stock" type="number" step="1" inputmode="numeric"></div>
+    <div class="campo" id="pf-costo-c" hidden><label for="pf-costo">Costo por unidad (solo usted lo ve)</label><input id="pf-costo" type="number" min="0" step="500" inputmode="numeric"></div>
+    <div class="acciones campo full"><div><button type="button" class="btn-danger" id="pf-borrar" hidden>Quitar producto</button></div><div><button type="button" id="pf-cancelar">Cancelar</button><button type="submit" class="btn-main">Guardar</button></div></div>
+  </form>
+  <form class="grupo" id="pos-libre-f" hidden autocomplete="off">
+    <h3>Venta rápida</h3>
+    <div class="campo full"><label for="pl-nombre">Qué vende</label><input id="pl-nombre" placeholder="Ej: Vidrio templado"></div>
+    <div class="campo"><label for="pl-precio">Precio</label><input id="pl-precio" type="number" min="0" step="500" inputmode="numeric"></div>
+    <div class="campo"><label for="pl-cant">Cantidad</label><input id="pl-cant" type="number" min="1" value="1" inputmode="numeric"></div>
+    <div class="acciones campo full"><div></div><div><button type="button" id="pl-cancelar">Cancelar</button><button type="submit" class="btn-main">Agregar a la venta</button></div></div>
+  </form>
+  <div class="grupo"><h3 id="pos-hoy-t">Ventas de hoy</h3><div class="campo full" id="pos-hoy" style="gap:0"></div></div>
+</div>
+
+<div class="panel" id="caja" hidden>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+    <h2>Caja diaria</h2>
+    <button type="button" id="caja-cerrar">Cerrar</button>
+  </div>
+  <div class="dia">
+    <button type="button" id="c-ant" aria-label="Día anterior">‹ Anterior</button>
+    <input type="date" id="c-fecha" aria-label="Día">
+    <button type="button" id="c-sig" aria-label="Día siguiente">Siguiente ›</button>
+    <button type="button" id="c-hoy">Hoy</button>
+  </div>
+  <div class="grupo turno" id="c-turno"></div>
+  <div class="tiles" id="c-tiles"></div>
+  <div class="grupo" id="c-vedit" hidden>
+    <h3>Corregir venta (solo administrador)</h3>
+    <div class="campo full" id="c-vedit-lin" style="gap:8px"></div>
+    <div class="campo"><label for="c-vedit-met">Forma de pago</label><select id="c-vedit-met"></select></div>
+    <div class="campo"><label>Total nuevo</label><b id="c-vedit-tot" style="font-size:1.3rem">$ 0</b></div>
+    <p class="aviso campo full" style="margin:0">Si baja la cantidad o quita un producto, esas unidades vuelven al inventario.</p>
+    <div class="acciones campo full"><div></div><div><button type="button" id="c-vedit-no">Cancelar</button><button type="button" class="btn-main" id="c-vedit-ok">Guardar cambios</button></div></div>
+  </div>
+  <div class="grupo"><h3>Plata que entró</h3><div class="campo full" id="c-pagos" style="gap:0"></div></div>
+  <div class="grupo" id="c-sal-g" hidden><h3 id="c-sal-t">Salidas de dinero de la caja</h3>
+    <p class="aviso campo full" style="margin:0">Gastos pagados con plata de la caja: insumos, domicilios, almuerzos, etc. Se restan del efectivo del día.</p>
+    <div class="campo full" id="c-sal" style="gap:0"></div>
+    <div class="campo full" id="c-sal-form" style="display:grid;grid-template-columns:2fr 1fr;gap:10px">
+      <div class="campo"><label for="s-concepto">En qué se gastó <b class="oblig">*</b></label><input id="s-concepto" placeholder="Ej: compra de pegante B-7000"></div>
+      <div class="campo"><label for="s-valor">Valor <b class="oblig">*</b></label><input id="s-valor" type="number" min="0" step="500" inputmode="numeric"></div>
+      <div class="campo" style="grid-column:1/-1;flex-direction:row;flex-wrap:wrap;gap:8px;align-items:center">
+        <label class="btn-foto" id="s-foto-btn" style="padding:8px 12px;background:var(--panel);color:var(--ink);border:1px solid var(--line)">Foto de la factura (opcional)<input id="s-foto" type="file" accept="image/*" capture="environment"></label>
+        <span class="aviso" id="s-foto-ok" style="margin:0"></span>
+        <button type="button" class="btn-main" id="s-agregar" style="margin-left:auto">Registrar salida</button>
+      </div>
+    </div>
+  </div>
+  <div class="grupo" id="c-gastos-g" hidden><h3>Otros gastos (solo usted los ve)</h3>
+    <p class="aviso campo full" style="margin:0">Gastos que no salen del cajón: arriendo, servicios, pagos por transferencia. No afectan el cuadre de efectivo.</p>
+    <div class="campo full" id="c-gastos" style="gap:0"></div>
+    <div class="campo"><label for="g-concepto">Concepto</label><input id="g-concepto" placeholder="Ej: compra de pantallas"></div>
+    <div class="campo"><label for="g-valor">Valor</label><input id="g-valor" type="number" min="0" step="1000" inputmode="numeric"></div>
+    <div class="campo full"><button type="button" id="g-agregar">Agregar gasto</button></div>
+  </div>
+  <div class="grupo"><h3>Movimiento de equipos</h3><div class="campo full" id="c-rep" style="gap:0"></div></div>
+  <div class="grupo"><h3 id="c-mes-t">Resumen del mes</h3><div class="tiles campo full" id="c-mes"></div></div>
+  <p class="aviso" id="caja-msg" role="status" style="margin:0"></p>
+</div>
+
+<div class="panel" id="inv" hidden>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+    <h2>Inventario</h2>
+    <button type="button" id="inv-cerrar">Cerrar</button>
+  </div>
+  <div class="botones">
+    <button type="button" class="btn-main" id="inv-fv" hidden>Cargar con foto y voz</button>
+    <button type="button" id="inv-excel" hidden>Cargar desde Excel</button>
+    <label class="btn-foto" id="inv-foto-btn" hidden>Registrar entrada con foto<input id="inv-foto" type="file" accept="image/*" capture="environment"></label>
+    <button type="button" id="inv-pnuevo" hidden>+ Producto de venta</button>
+    <button type="button" id="inv-nuevo">+ Repuesto (entrada a mano)</button>
+  </div>
+  <p class="aviso" id="inv-msg" role="status" style="margin:0">Tómele la foto a la etiqueta o a la caja del repuesto, donde sale el modelo.</p>
+  <form class="grupo" id="ie" hidden autocomplete="off">
+    <h3 id="ie-tit">Producto</h3>
+    <div class="campo full iep"><label for="ie-nombre">Nombre del producto</label><input id="ie-nombre"></div>
+    <div class="campo iep"><label for="ie-cat">Categoría</label><select id="ie-cat"></select></div>
+    <div class="campo iep"><label for="ie-precio">Precio de venta</label><input id="ie-precio" type="number" min="0" step="500" inputmode="numeric"></div>
+    <div class="campo ier"><label for="ie-tipo">Categoría (tipo)</label><select id="ie-tipo"></select></div>
+    <div class="campo ier"><label for="ie-calidad">Calidad</label><input id="ie-calidad" list="calidades"></div>
+    <div class="campo ier"><label for="ie-marca">Marca del celular</label><input id="ie-marca" list="marcas"></div>
+    <div class="campo ier"><label for="ie-modelo">Modelo</label><input id="ie-modelo"></div>
+    <div class="campo"><label for="ie-cant">Cantidad en existencia</label><input id="ie-cant" type="number" min="0" step="1" inputmode="numeric"></div>
+    <div class="campo" id="ie-costo-c" hidden><label for="ie-costo">Costo por unidad (solo usted lo ve)</label><input id="ie-costo" type="number" min="0" step="500" inputmode="numeric"></div>
+    <div class="acciones campo full"><div><button type="button" class="btn-danger" id="ie-borrar" hidden>Eliminar</button></div><div><button type="button" id="ie-cancelar">Cancelar</button><button type="submit" class="btn-main">Guardar</button></div></div>
+  </form>
+  <form class="grupo" id="inv-form" hidden autocomplete="off">
+    <h3>Entrada de repuesto</h3>
+    <div class="campo"><label for="i-tipo">Tipo</label><select id="i-tipo"></select></div>
+    <div class="campo"><label for="i-calidad">Calidad</label><input id="i-calidad" list="calidades" placeholder="Original, OLED, Incell…"></div>
+    <div class="campo"><label for="i-marca">Marca</label><input id="i-marca" list="marcas" required></div>
+    <div class="campo"><label for="i-modelo">Modelo</label><input id="i-modelo" required></div>
+    <div class="campo"><label for="i-cant">Cantidad que entra</label><input id="i-cant" type="number" min="1" value="1" inputmode="numeric"></div>
+    <div class="campo" id="c-icosto" hidden><label for="i-costo">Costo por unidad</label><input id="i-costo" type="number" min="0" step="1000" inputmode="numeric"></div>
+    <div class="acciones campo full"><div></div><div><button type="button" id="inv-cancelar">Cancelar</button><button type="submit" class="btn-main">Guardar entrada</button></div></div>
+  </form>
+  <form class="grupo" id="fv" hidden autocomplete="off">
+    <h3>Cargar con foto y voz</h3>
+    <div class="campo full"><label for="fv-dest">Qué va a cargar</label><select id="fv-dest"><option value="productos">Producto para la venta (mostrador)</option><option value="repuestos">Repuesto para reparación</option></select></div>
+    <div class="campo full" style="flex-direction:row;flex-wrap:wrap;gap:10px;align-items:center">
+      <label class="btn-foto">Tomar foto del producto<input id="fv-foto" type="file" accept="image/*" capture="environment"></label>
+      <img id="fv-prev" alt="Foto del producto" hidden style="max-height:110px;max-width:100%;border-radius:8px">
+    </div>
+    <div class="campo full"><label for="fv-nota">Dicte los datos (toque el cuadro y el micrófono del teclado)</label>
+      <textarea id="fv-nota" rows="3" placeholder="Ej: Hay cinco unidades de cargador tipo C de 20 vatios marca Samsung, me salió a 18 mil y se vende a 35 mil."></textarea></div>
+    <div class="campo full"><button type="button" class="btn-main" id="fv-leer">Llenar con la foto y lo que dicté</button></div>
+    <div class="campo full" id="fv-campos" hidden style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="campo fvp" style="grid-column:1/-1"><label for="fv-nombre">Nombre del producto</label><input id="fv-nombre"></div>
+      <div class="campo fvp"><label for="fv-cat">Categoría</label><select id="fv-cat"></select></div>
+      <div class="campo fvp"><label for="fv-precio">Precio de venta</label><input id="fv-precio" type="number" min="0" step="500" inputmode="numeric"></div>
+      <div class="campo fvr"><label for="fv-tipo">Tipo de repuesto</label><select id="fv-tipo"></select></div>
+      <div class="campo fvr"><label for="fv-calidad">Calidad</label><input id="fv-calidad" list="calidades"></div>
+      <div class="campo fvr"><label for="fv-marca">Marca del celular</label><input id="fv-marca" list="marcas"></div>
+      <div class="campo fvr"><label for="fv-modelo">Modelo</label><input id="fv-modelo"></div>
+      <div class="campo"><label for="fv-cant">Cantidad</label><input id="fv-cant" type="number" min="0" inputmode="numeric"></div>
+      <div class="campo"><label for="fv-costo">Costo por unidad</label><input id="fv-costo" type="number" min="0" step="500" inputmode="numeric"></div>
+      <p class="aviso" id="fv-exp" style="margin:0;grid-column:1/-1"></p>
+      <div class="acciones" style="grid-column:1/-1"><div><button type="button" id="fv-cancelar">Cancelar</button></div><div><button type="submit" class="btn-main">Guardar en el inventario</button></div></div>
+    </div>
+    <p class="aviso campo full" id="fv-msg" role="status" style="margin:0"></p>
+  </form>
+  <div class="grupo" id="xl" hidden>
+    <h3>Cargar inventario desde Excel</h3>
+    <div class="campo"><label for="xl-dest">Qué va a cargar</label><select id="xl-dest"><option value="productos">Productos para la venta (mostrador)</option><option value="repuestos">Repuestos para reparación</option></select></div>
+    <div class="campo"><label for="xl-modo">Si el producto ya existe</label><select id="xl-modo"><option value="reemplazar">Reemplazar la cantidad (conteo completo)</option><option value="sumar">Sumar a la cantidad que hay (llegó mercancía)</option></select></div>
+    <p class="aviso campo full" id="xl-cols" style="margin:0"></p>
+    <div class="campo full" style="flex-direction:row;flex-wrap:wrap;gap:8px">
+      <button type="button" id="xl-plantilla">Descargar plantilla de Excel</button>
+      <label class="btn-foto" style="padding:9px 14px">Escoger archivo Excel<input id="xl-file" type="file" accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv"></label>
+    </div>
+    <div class="campo full" id="xl-prev"></div>
+    <div class="campo full"><button type="button" class="btn-main" id="xl-ok" hidden>Cargar</button></div>
+    <p class="aviso campo full" id="xl-msg" role="status" style="margin:0"></p>
+  </div>
+  <div style="display:flex;gap:8px"><button type="button" id="inv-tab-prod" class="btn-main">Productos de venta</button><button type="button" id="inv-tab-rep">Repuestos</button></div>
+  <input id="inv-buscar" type="search" placeholder="Buscar">
+  <div class="inv-lista" id="inv-lista"></div>
+</div>
+<datalist id="dl-clientes"></datalist>
+<datalist id="calidades"><option>Original</option><option>OLED</option><option>Incell</option><option>TFT</option><option>Genérico</option></datalist>
+
+<datalist id="marcas"><option>Samsung</option><option>Xiaomi</option><option>Motorola</option><option>iPhone</option><option>Huawei</option><option>Oppo</option><option>Realme</option><option>Tecno</option><option>Honor</option><option>ZTE</option></datalist>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="js/01-base.js"></script>
+<script src="js/02-almacenamiento.js"></script>
+<script src="js/03-pantalla-principal.js"></script>
+<script src="js/04-formulario.js"></script>
+<script src="js/05-recibir-con-foto-sticker.js"></script>
+<script src="js/06-asistente-paso-a-paso.js"></script>
+<script src="js/07-recibir-por-voz.js"></script>
+<script src="js/08-patron-desbloqueo.js"></script>
+<script src="js/09-fotos-del-equipo.js"></script>
+<script src="js/10-administracion-y-configuracion.js"></script>
+<script src="js/11-inventario.js"></script>
+<script src="js/12-cargar-con-foto-y-voz.js"></script>
+<script src="js/13-carga-desde-excel.js"></script>
+<script src="js/14-recibo-impresora-termica.js"></script>
+<script src="js/15-reportar-reparacion.js"></script>
+<script src="js/16-caja-diaria.js"></script>
+<script src="js/17-entregar-equipo.js"></script>
+<script src="js/18-salidas-de-dinero.js"></script>
+<script src="js/19-apertura-y-cierre-de-caja.js"></script>
+<script src="js/20-ventas-de-mostrador.js"></script>
+<script src="js/21-encargos-y-clientes.js"></script>
+<script src="js/22-caja-corregir-ventas.js"></script>
+<script src="js/23-deshacer.js"></script>
+<script src="js/24-log-de-actividad.js"></script>
+<script src="js/25-inicio-de-sesion.js"></script>
+</body>
+</html>
